@@ -191,15 +191,18 @@ public class ServicioPlanEstudio extends Servicio {
         } catch (SQLException e) {
             throw new NoDataException("La base de datos no se encuentra disponible");
         }
+
         CallableStatement pstmt = null;
         try {
-            pstmt = this.conexion.prepareCall(eliminarPE);
+            pstmt = this.conexion.prepareCall("{call eliminarPlanEstudio(?, ?)}");
             pstmt.setInt(1, id);
-            int resultado = pstmt.executeUpdate();
-            if (resultado == 0) {
+            pstmt.registerOutParameter(2, java.sql.Types.INTEGER);
+            pstmt.execute();
+            int filas = pstmt.getInt(2);
+            if (filas == 0) {
                 throw new NoDataException("No se realizó el borrado");
             }
-            System.out.println("\nEliminación Satisfactoria!");
+            System.out.println("\nEliminación de PlanEstudio Satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
             throw new GlobalException("Error en la eliminación de PlanEstudio: " + e.getMessage());
@@ -212,4 +215,6 @@ public class ServicioPlanEstudio extends Servicio {
             }
         }
     }
+
+
 }

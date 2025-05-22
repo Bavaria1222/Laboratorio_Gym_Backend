@@ -7,23 +7,21 @@ import org.example.Exeption.NoDataException;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class ServicioCarrera extends Servicio {
 
     private static final String insertarCarrera = "{call insertarcarrera(?,?,?,?)}";
-    private static final String listarCarrera = "{call listarCarrera(?)}";
-    private static final String buscarXId = "{?=call buscarCarrera(?)}";
+    private static final String listarCarrera = "{? = call listarcarrera()}";
+    private static final String buscarCarrera = "{? = call buscarCarrera(?)}";
     private static final String modificarCarrera = "{call modificarCarrera(?,?,?,?,?)}";
-    private static final String eliminarCarrera = "{call eliminarCarrera(?)}";
+    private static final String eliminarCarrera = "{call eliminarCarrera(?, ?)}";
 
+    public ServicioCarrera() {}
 
-    public ServicioCarrera() {
-
-    }
-
-    public void insertarCarrera(Carrera laCarrera) throws GlobalException, NoDataException {
+    public void insertarCarrera(Carrera carrera) throws GlobalException, NoDataException {
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
@@ -34,31 +32,23 @@ public class ServicioCarrera extends Servicio {
 
         CallableStatement pstmt = null;
         try {
-            // Llamada al procedimiento almacenado insertarcarrera con 4 parámetros
-            pstmt = this.conexion.prepareCall("{call insertarcarrera(?,?,?,?)}");
+            pstmt = this.conexion.prepareCall(insertarCarrera);
+            pstmt.setInt(1, carrera.getIdCarrera());
+            pstmt.setString(2, carrera.getCodigo());
+            pstmt.setString(3, carrera.getNombre());
+            pstmt.setString(4, carrera.getTitulo());
 
-            // Asignar valores a cada parámetro en el orden definido en el procedimiento
-            pstmt.setInt(1, laCarrera.getIdCarrera());
-            pstmt.setString(2, laCarrera.getCodigo());
-            pstmt.setString(3, laCarrera.getNombre());
-            pstmt.setString(4, laCarrera.getTitulo());
-
-            // Ejecutar la llamada
-            boolean resultado = pstmt.execute();
-            if (resultado) {
-                throw new NoDataException("No se realizó la inserción");
-            }
+            pstmt.execute();
+            System.out.println("\nInserción de Carrera satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Llave duplicada u otro error SQL");
+            throw new GlobalException("Error en la inserción de Carrera: " + e.getMessage());
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
-                throw new GlobalException("Estatutos inválidos o nulos");
+                throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
     }
@@ -67,30 +57,19 @@ public class ServicioCarrera extends Servicio {
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
-            throw new GlobalException("No se ha localizado el Driver");
+            throw new GlobalException("No se ha localizado el driver");
         } catch (SQLException e) {
             throw new NoDataException("La base de datos no se encuentra disponible");
         }
 
+        ArrayList<Carrera> lista = new ArrayList<>();
         ResultSet rs = null;
-        ArrayList<Carrera> coleccion = new ArrayList<>();
         CallableStatement pstmt = null;
-
         try {
-            // Llamada a la función listarcarrera que retorna un ref cursor
-            pstmt = this.conexion.prepareCall("{? = call listarcarrera()}");
-
-            // Registrar el primer parámetro (de salida) como cursor
-            // El valor -10 corresponde a OracleTypes.CURSOR (o puedes usar OracleTypes.CURSOR si importas oracle.jdbc.OracleTypes)
-            pstmt.registerOutParameter(1, -10);
-
-            // Ejecutar la llamada a la función
+            pstmt = this.conexion.prepareCall(listarCarrera);
+            pstmt.registerOutParameter(1, -10); // OracleTypes.CURSOR
             pstmt.execute();
-
-            // Recuperar el cursor convertido a ResultSet
             rs = (ResultSet) pstmt.getObject(1);
-
-            // Recorrer el ResultSet y mapear cada fila a un objeto Carrera
             while (rs.next()) {
                 Carrera carrera = new Carrera(
                         rs.getInt("idcarrera"),
@@ -98,27 +77,22 @@ public class ServicioCarrera extends Servicio {
                         rs.getString("nombre"),
                         rs.getString("titulo")
                 );
-                coleccion.add(carrera);
+                lista.add(carrera);
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Sentencia no válida");
+            throw new GlobalException("Error al listar carreras: " + e.getMessage());
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
-                throw new GlobalException("Estatutos inválidos o nulos");
+                throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
-
-        if (!coleccion.isEmpty()) {
-            return coleccion;
+        if (!lista.isEmpty()) {
+            return lista;
         } else {
             throw new NoDataException("No hay datos");
         }
@@ -133,22 +107,17 @@ public class ServicioCarrera extends Servicio {
             throw new NoDataException("La base de datos no se encuentra disponible");
         }
 
+        Carrera carrera = null;
         ResultSet rs = null;
-        Carrera laCarrera = null;
         CallableStatement pstmt = null;
-
         try {
-            // Llamada a la función almacenada buscarCarrera que retorna un ref cursor
-            pstmt = this.conexion.prepareCall("{? = call buscarCarrera(?)}");
-            // Registrar el parámetro de salida (cursor)
-            pstmt.registerOutParameter(1, -10);  // -10 equivale a OracleTypes.CURSOR
-            // Asignar el parámetro de entrada (el id a buscar)
+            pstmt = this.conexion.prepareCall(buscarCarrera);
+            pstmt.registerOutParameter(1, -10);
             pstmt.setInt(2, id);
             pstmt.execute();
             rs = (ResultSet) pstmt.getObject(1);
-
             if (rs.next()) {
-                laCarrera = new Carrera(
+                carrera = new Carrera(
                         rs.getInt("idcarrera"),
                         rs.getString("codigo"),
                         rs.getString("nombre"),
@@ -157,25 +126,20 @@ public class ServicioCarrera extends Servicio {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Sentencia no válida");
+            throw new GlobalException("Error en la búsqueda de Carrera: " + e.getMessage());
         } finally {
             try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                if (rs != null) rs.close();
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
-                throw new GlobalException("Estatutos inválidos o nulos");
+                throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
-
-        return laCarrera;
+        return carrera;
     }
 
-    public void modificarCarrera(Carrera laCarrera) throws GlobalException, NoDataException {
+    public void modificarCarrera(Carrera carrera) throws GlobalException, NoDataException {
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
@@ -187,34 +151,30 @@ public class ServicioCarrera extends Servicio {
         CallableStatement pstmt = null;
         try {
             pstmt = this.conexion.prepareCall(modificarCarrera);
-            pstmt.setInt(1, laCarrera.getIdCarrera());
-            pstmt.setString(2, laCarrera.getCodigo());
-            pstmt.setString(3, laCarrera.getNombre());
-            pstmt.setString(4, laCarrera.getTitulo());
-            // Registrar el parámetro de salida para el update count
-            pstmt.registerOutParameter(5, java.sql.Types.INTEGER);
+            pstmt.setInt(1, carrera.getIdCarrera());
+            pstmt.setString(2, carrera.getCodigo());
+            pstmt.setString(3, carrera.getNombre());
+            pstmt.setString(4, carrera.getTitulo());
+            pstmt.registerOutParameter(5, Types.INTEGER);
 
             pstmt.execute();
             int rows = pstmt.getInt(5);
             if (rows == 0) {
                 throw new NoDataException("No se realizó la actualización");
             }
-            System.out.println("\nModificación Satisfactoria!");
+            System.out.println("\nModificación satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Sentencia no válida");
+            throw new GlobalException("Error en la modificación de Carrera: " + e.getMessage());
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
-                throw new GlobalException("Estatutos inválidos o nulos");
+                throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
     }
-
     public void eliminarCarrera(int id) throws GlobalException, NoDataException {
         try {
             this.conectar();
@@ -227,30 +187,31 @@ public class ServicioCarrera extends Servicio {
         CallableStatement pstmt = null;
 
         try {
-            pstmt = this.conexion.prepareCall(eliminarCarrera);
-            pstmt.setInt(1, id);
-            int resultado = pstmt.executeUpdate();
+            pstmt = this.conexion.prepareCall("{call eliminarCarrera(?, ?)}");
+            pstmt.setInt(1, id);                        // IN: ID de la carrera
+            pstmt.registerOutParameter(2, Types.INTEGER); // OUT: número de filas afectadas
+
+            pstmt.execute();
+
+            int resultado = pstmt.getInt(2); // Recoge el número de filas afectadas
             if (resultado == 0) {
-                throw new NoDataException("No se realizó el borrado");
+                throw new NoDataException("No se realizó el borrado. Carrera no encontrada.");
             }
-            System.out.println("\nEliminación Satisfactoria!");
+
+            System.out.println("\nEliminación satisfactoria de la carrera con ID: " + id);
+
         } catch (SQLException e) {
-            throw new GlobalException("Sentencia no válida");
+            e.printStackTrace();
+            throw new GlobalException("Error en la eliminación de Carrera: " + e.getMessage());
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
-                throw new GlobalException("Estatutos inválidos o nulos");
+                throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
     }
 
 
-
-
 }
-
-

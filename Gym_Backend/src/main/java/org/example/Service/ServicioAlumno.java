@@ -18,7 +18,8 @@ public class ServicioAlumno extends Servicio {
     private static final String listarAlumno = "{? = call listarAlumno()}";
     private static final String buscarAlumno = "{? = call buscarAlumno(?)}";
     private static final String modificarAlumno = "{call modificarAlumno(?,?,?,?,?,?,?,?)}";
-    private static final String eliminarAlumno = "{call eliminarAlumno(?)}";
+    private static final String eliminarAlumno = "{call eliminarAlumno(?, ?)}";
+
 
     public ServicioAlumno() {
     }
@@ -198,15 +199,25 @@ public class ServicioAlumno extends Servicio {
         } catch (SQLException e) {
             throw new NoDataException("La base de datos no se encuentra disponible");
         }
+
         CallableStatement pstmt = null;
         try {
+            // Nuevo procedimiento con parámetro OUT
+            String eliminarAlumno = "{call eliminarAlumno(?, ?)}";
             pstmt = this.conexion.prepareCall(eliminarAlumno);
-            pstmt.setString(1, cedula);
-            int resultado = pstmt.executeUpdate();
+
+            pstmt.setString(1, cedula);                      // IN: cédula del alumno
+            pstmt.registerOutParameter(2, Types.INTEGER);    // OUT: resultado (número de filas afectadas)
+
+            pstmt.execute();
+            int resultado = pstmt.getInt(2);                 // Obtenemos el valor del parámetro OUT
+
             if (resultado == 0) {
-                throw new NoDataException("No se realizó el borrado");
+                throw new NoDataException("No se realizó el borrado. Alumno no encontrado.");
             }
+
             System.out.println("\nEliminación Satisfactoria!");
+
         } catch (SQLException e) {
             e.printStackTrace();
             throw new GlobalException("Error en la eliminación de Alumno: " + e.getMessage());

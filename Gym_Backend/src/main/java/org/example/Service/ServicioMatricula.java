@@ -18,7 +18,8 @@ public class ServicioMatricula extends Servicio {
     private static final String listarMatricula = "{? = call listarMatricula()}";
     private static final String buscarMatricula = "{? = call buscarMatricula(?)}";
     private static final String modificarMatricula = "{call modificarMatricula(?,?,?,?,?)}";
-    private static final String eliminarMatricula = "{call eliminarMatricula(?)}";
+    private static final String eliminarMatricula = "{call eliminarMatricula(?, ?)}";
+
 
     public ServicioMatricula() {
     }
@@ -193,35 +194,40 @@ public class ServicioMatricula extends Servicio {
         }
     }
 
-    // Elimina una matrícula por id
     public void eliminarMatricula(int id) throws GlobalException, NoDataException {
-        try{
+        try {
             this.conectar();
-        } catch(ClassNotFoundException e){
+        } catch (ClassNotFoundException e) {
             throw new GlobalException("Driver no localizado: " + e.getMessage());
-        } catch(SQLException e){
+        } catch (SQLException e) {
             throw new NoDataException("La BD no se encuentra disponible: " + e.getMessage());
         }
+
         CallableStatement pstmt = null;
         try {
-            pstmt = this.conexion.prepareCall(eliminarMatricula);
+
+            pstmt = this.conexion.prepareCall("{call eliminarMatricula(?, ?)}");
             pstmt.setInt(1, id);
-            int resultado = pstmt.executeUpdate();
-            if(resultado == 0){
-                throw new NoDataException("No se realizó el borrado");
+            pstmt.registerOutParameter(2, Types.INTEGER);
+            pstmt.execute();
+
+            int resultado = pstmt.getInt(2);
+            if (resultado == 0) {
+                throw new NoDataException("No se realizó el borrado. Matrícula no encontrada.");
             }
+
             System.out.println("\nEliminación de Matrícula Satisfactoria!");
-        } catch(SQLException e){
+        } catch (SQLException e) {
             e.printStackTrace();
             throw new GlobalException("Error en la eliminación de Matrícula: " + e.getMessage());
         } finally {
             try {
-                if(pstmt != null)
-                    pstmt.close();
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
-            } catch(SQLException e){
+            } catch (SQLException e) {
                 throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
     }
+
 }

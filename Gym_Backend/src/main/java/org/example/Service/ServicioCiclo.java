@@ -200,23 +200,27 @@ public class ServicioCiclo extends Servicio {
         } catch (SQLException e) {
             throw new NoDataException("La base de datos no se encuentra disponible");
         }
+
         CallableStatement pstmt = null;
         try {
-            pstmt = this.conexion.prepareCall(eliminarCiclo);
-            pstmt.setInt(1, id);
-            int resultado = pstmt.executeUpdate();
+            String call = "{call eliminarCiclo(?, ?)}";
+            pstmt = this.conexion.prepareCall(call);
+            pstmt.setInt(1, id);                      // IN: id ciclo
+            pstmt.registerOutParameter(2, Types.INTEGER); // OUT: filas afectadas
+
+            pstmt.execute();
+            int resultado = pstmt.getInt(2);
             if (resultado == 0) {
-                throw new NoDataException("No se realizó el borrado");
+                throw new NoDataException("No se realizó el borrado. Ciclo no encontrado.");
             }
+
             System.out.println("\nEliminación de Ciclo Satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
             throw new GlobalException("Error en la eliminación de Ciclo: " + e.getMessage());
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
                 throw new GlobalException("Error cerrando recursos: " + e.getMessage());

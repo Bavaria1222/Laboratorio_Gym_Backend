@@ -14,6 +14,9 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     // Agregar la dependencia para el driver de Oracle
     implementation("com.oracle.database.jdbc:ojdbc8:21.5.0.0")
+    //Agregar dependencia de GSON
+    implementation("com.google.code.gson:gson:2.10.1")
+
 
 
 }

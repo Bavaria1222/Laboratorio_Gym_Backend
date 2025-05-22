@@ -188,22 +188,26 @@ public class ServicioGrupo extends Servicio {
         } catch (ClassNotFoundException | SQLException e) {
             throw new GlobalException("Error en la conexión: " + e.getMessage());
         }
+
         CallableStatement pstmt = null;
         try {
-            pstmt = this.conexion.prepareCall(eliminarGrupo);
+            pstmt = this.conexion.prepareCall("{call eliminarGrupo(?, ?)}");
             pstmt.setInt(1, id);
-            int resultado = pstmt.executeUpdate();
+            pstmt.registerOutParameter(2, Types.INTEGER); // OUT: filas afectadas
+
+            pstmt.execute();
+            int resultado = pstmt.getInt(2); // valor del parámetro OUT
+
             if (resultado == 0) {
-                throw new NoDataException("No se realizó el borrado");
+                throw new NoDataException("No se realizó el borrado. Grupo no encontrado.");
             }
+
             System.out.println("\nEliminación de Grupo Satisfactoria!");
         } catch (SQLException e) {
-            e.printStackTrace();
             throw new GlobalException("Error en la eliminación de Grupo: " + e.getMessage());
         } finally {
             try {
-                if (pstmt != null)
-                    pstmt.close();
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
                 throw new GlobalException("Error cerrando recursos: " + e.getMessage());

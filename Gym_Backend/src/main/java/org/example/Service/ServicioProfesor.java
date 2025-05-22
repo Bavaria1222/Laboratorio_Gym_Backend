@@ -185,7 +185,6 @@ public class ServicioProfesor extends Servicio {
         }
     }
 
-
     public void eliminarProfesor(String cedula) throws GlobalException, NoDataException {
         try {
             this.conectar();
@@ -197,12 +196,16 @@ public class ServicioProfesor extends Servicio {
 
         CallableStatement pstmt = null;
         try {
-            pstmt = this.conexion.prepareCall(eliminarProfesor);
+            pstmt = this.conexion.prepareCall("{call eliminarProfesor(?, ?)}");
             pstmt.setString(1, cedula);
-            int resultado = pstmt.executeUpdate();
-            if (resultado == 0) {
-                throw new NoDataException("No se realizó el borrado");
+            pstmt.registerOutParameter(2, java.sql.Types.INTEGER);
+            pstmt.execute();
+
+            int filasAfectadas = pstmt.getInt(2);
+            if (filasAfectadas == 0) {
+                throw new NoDataException("No se encontró el profesor con la cédula proporcionada.");
             }
+
             System.out.println("\nEliminación Satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
@@ -216,4 +219,5 @@ public class ServicioProfesor extends Servicio {
             }
         }
     }
+
 }

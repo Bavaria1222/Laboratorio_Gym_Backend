@@ -17,7 +17,7 @@ public class ServicioCurso extends Servicio {
     private static final String listarCurso = "{? = call listarCurso()}";
     private static final String buscarCurso = "{? = call buscarCurso(?)}";
     private static final String modificarCurso = "{call modificarCurso(?,?,?,?,?,?)}";
-    private static final String eliminarCurso = "{call eliminarCurso(?)}";
+    private static final String eliminarCurso = "{call eliminarCurso(?, ?)}";
 
     public ServicioCurso() {
     }
@@ -198,19 +198,21 @@ public class ServicioCurso extends Servicio {
         try {
             pstmt = this.conexion.prepareCall(eliminarCurso);
             pstmt.setInt(1, id);
-            int resultado = pstmt.executeUpdate();
+            pstmt.registerOutParameter(2, java.sql.Types.INTEGER);
+            pstmt.execute();
+            int resultado = pstmt.getInt(2);
             if (resultado == 0) {
-                throw new NoDataException("No se realizó el borrado");
+                throw new NoDataException("No se realizó el borrado. Curso no encontrado.");
             }
             System.out.println("\nEliminación Satisfactoria!");
         } catch (SQLException e) {
-            throw new GlobalException("Sentencia no válida");
+            throw new GlobalException("Error en la eliminación de Curso: " + e.getMessage());
         } finally {
             try {
                 if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
-                throw new GlobalException("Estatutos inválidos o nulos");
+                throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
     }

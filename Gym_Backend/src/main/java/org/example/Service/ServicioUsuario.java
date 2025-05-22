@@ -204,26 +204,34 @@ public class ServicioUsuario extends Servicio {
         } catch (SQLException e) {
             throw new NoDataException("La base de datos no se encuentra disponible");
         }
+
         CallableStatement pstmt = null;
         try {
+            // Nuevo procedimiento con parámetro OUT
+            String eliminarUsuario = "{call eliminarUsuario(?, ?)}";
             pstmt = this.conexion.prepareCall(eliminarUsuario);
             pstmt.setString(1, cedula);
-            int resultado = pstmt.executeUpdate();
+            pstmt.registerOutParameter(2, java.sql.Types.INTEGER); // filas afectadas
+
+            pstmt.execute();
+            int resultado = pstmt.getInt(2);
+
             if (resultado == 0) {
-                throw new NoDataException("No se realizó el borrado");
+                throw new NoDataException("No se realizó el borrado. Usuario no encontrado.");
             }
-            System.out.println("\nEliminación Satisfactoria!");
+
+            System.out.println("\nEliminación de Usuario Satisfactoria!");
         } catch (SQLException e) {
-            throw new GlobalException("Sentencia no válida");
+            e.printStackTrace();
+            throw new GlobalException("Error en la eliminación de Usuario: " + e.getMessage());
         } finally {
             try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                if (pstmt != null) pstmt.close();
                 this.desconectar();
             } catch (SQLException e) {
-                throw new GlobalException("Estatutos inválidos o nulos");
+                throw new GlobalException("Error cerrando recursos: " + e.getMessage());
             }
         }
     }
+
 }
