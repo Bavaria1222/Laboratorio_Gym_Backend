@@ -14,7 +14,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 
-public class ProfesorHandler implements HttpHandler {
+public class    ProfesorHandler implements HttpHandler {
 
     private final ControlProfesor control = new ControlProfesor();
     private final Gson gson = new GsonBuilder().create();

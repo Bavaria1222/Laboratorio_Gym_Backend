@@ -865,11 +865,6 @@ VALUES ('S002', 1, NULL);
 COMMIT;
 
 
-
-
-
-
-
 --select * from carrera;
 --select * from usuario;
 --select * from curso;
@@ -881,11 +876,192 @@ COMMIT;
 --select * from matricula;
 
 
+--====================================
+
+--01/06/2025--
+--====================================
 
 
 
 
 
 
+-- ================================
+-- ELIMINAR ALUMNO
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarAlumno (
+    p_cedula IN usuario.cedula%TYPE,
+    p_result OUT NUMBER
+) AS
+    v_count NUMBER := 0;
+BEGIN
+    DELETE FROM alumno WHERE cedula = p_cedula;
+    v_count := SQL%ROWCOUNT;
+
+    DELETE FROM usuario WHERE cedula = p_cedula;
+    v_count := v_count + SQL%ROWCOUNT;
+
+    COMMIT;
+
+    p_result := v_count;
+END;
+/
+
+-- ================================
+-- ELIMINAR PROFESOR
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarProfesor (
+    p_cedula IN usuario.cedula%TYPE,
+    p_result OUT NUMBER
+) AS
+    v_count NUMBER := 0;
+BEGIN
+    DELETE FROM profesor WHERE cedula = p_cedula;
+    v_count := SQL%ROWCOUNT;
+
+    DELETE FROM usuario WHERE cedula = p_cedula;
+    v_count := v_count + SQL%ROWCOUNT;
+
+    COMMIT;
+
+    p_result := v_count;
+END;
+/
+
+-- ================================
+-- ELIMINAR CARRERA
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarCarrera (
+    p_idCarrera IN carrera.idCarrera%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM carrera WHERE idCarrera = p_idCarrera;
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
+
+-- ================================
+-- ELIMINAR CURSO
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarCurso (
+    p_idCurso IN curso.idCurso%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM curso WHERE idCurso = p_idCurso;
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
+
+-- ================================
+-- ELIMINAR GRUPO
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarGrupo (
+    p_idGrupo IN grupo.idGrupo%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM grupo WHERE idGrupo = p_idGrupo;
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
+
+-- ================================
+-- ELIMINAR MATRICULA
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarMatricula (
+    p_idMatricula IN matricula.idMatricula%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM matricula WHERE idMatricula = p_idMatricula;
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
+
+-- ================================
+-- ELIMINAR PLAN DE ESTUDIO
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarPlanEstudio (
+    p_idPlan IN plan_estudio.idPlan%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM plan_estudio WHERE idPlan = p_idPlan;
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
+
+-- ================================
+-- ELIMINAR USUARIO (GENÉRICO)
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarUsuario (
+    p_cedula IN usuario.cedula%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM usuario WHERE cedula = p_cedula;
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
+-- ================================
+-- ELIMINAR CICLO ()
+-- ================================
+CREATE OR REPLACE PROCEDURE eliminarCiclo(
+    p_id IN ciclo.idCiclo%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM ciclo WHERE idCiclo = p_id;
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
 
 
+CREATE OR REPLACE PROCEDURE eliminarPlanEstudio (
+    p_idPlanEstudio IN NUMBER,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM plan_estudio
+    WHERE idPlanEstudio = p_idPlanEstudio;
+
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/
+CREATE OR REPLACE PROCEDURE eliminarProfesor(
+    p_cedula IN usuario.cedula%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    -- Elimina de la tabla PROFESOR
+    DELETE FROM profesor WHERE cedula = p_cedula;
+
+    -- Elimina de la tabla USUARIO
+    DELETE FROM usuario WHERE cedula = p_cedula;
+
+    p_result := SQL%ROWCOUNT;  -- número de filas afectadas (de profesor)
+    COMMIT;
+END;
+
+CREATE OR REPLACE PROCEDURE eliminarUsuario(
+    p_cedula IN usuario.cedula%TYPE,
+    p_result OUT NUMBER
+) AS
+BEGIN
+    DELETE FROM usuario
+     WHERE cedula = p_cedula;
+
+    p_result := SQL%ROWCOUNT;
+    COMMIT;
+END;
+/

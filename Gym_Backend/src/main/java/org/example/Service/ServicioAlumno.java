@@ -1,5 +1,4 @@
 package org.example.Service;
-
 import org.example.Entity.Alumno;
 import org.example.Exeption.GlobalException;
 import org.example.Exeption.NoDataException;

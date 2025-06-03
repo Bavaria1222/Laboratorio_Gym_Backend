@@ -1,5 +1,6 @@
 package org.example.Service;
 
+import oracle.jdbc.internal.OracleTypes;
 import org.example.Entity.Profesor;
 import org.example.Exeption.GlobalException;
 import org.example.Exeption.NoDataException;
@@ -7,29 +8,29 @@ import org.example.Exeption.NoDataException;
 import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class ServicioProfesor extends Servicio {
 
-    // Definición de las cadenas de llamada a los procedimientos y funciones de Profesor.
+    // Llamadas a los procedures/funciones en Oracle
     private static final String insertarProfesor = "{call insertarProfesorCompleto(?,?,?,?,?,?)}";
-    private static final String listarProfesor = "{? = call listarProfesor()}";
-    private static final String buscarProfesor = "{? = call buscarProfesor(?)}";
+    private static final String listarProfesor    = "{? = call listarProfesor()}";
+    private static final String buscarProfesor    = "{? = call buscarProfesor(?)}";
     private static final String modificarProfesor = "{call modificarProfesor(?,?,?,?,?,?)}";
-    private static final String eliminarProfesor = "{call eliminarProfesor(?)}";
+    private static final String eliminarProfesor  = "{call eliminarProfesor(?, ?)}";
 
     public ServicioProfesor() {
     }
-
 
     public void insertarProfesor(Profesor profesor, String clave) throws GlobalException, NoDataException {
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
-            throw new GlobalException("No se ha localizado el driver");
+            throw new GlobalException("Driver no localizado: " + e.getMessage());
         } catch (SQLException e) {
-            throw new NoDataException("La base de datos no se encuentra disponible");
+            throw new NoDataException("BD no disponible: " + e.getMessage());
         }
 
         CallableStatement pstmt = null;
@@ -37,16 +38,15 @@ public class ServicioProfesor extends Servicio {
             pstmt = this.conexion.prepareCall(insertarProfesor);
             pstmt.setString(1, profesor.getCedula());
             pstmt.setString(2, clave);
-            pstmt.setString(3, "PROFESOR"); // Se asigna el rol por defecto
+            pstmt.setString(3, "PROFESOR");             // rol por defecto
             pstmt.setString(4, profesor.getNombre());
             pstmt.setString(5, profesor.getTelefono());
             pstmt.setString(6, profesor.getEmail());
-
             pstmt.execute();
             System.out.println("\nInserción de Profesor Satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Error en la inserción de Profesor: " + e.getMessage());
+            throw new GlobalException("Error al insertar Profesor: " + e.getMessage());
         } finally {
             try {
                 if (pstmt != null) pstmt.close();
@@ -57,14 +57,13 @@ public class ServicioProfesor extends Servicio {
         }
     }
 
-
     public Collection<Profesor> listarProfesor() throws GlobalException, NoDataException {
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
-            throw new GlobalException("No se ha localizado el driver");
+            throw new GlobalException("Driver no localizado: " + e.getMessage());
         } catch (SQLException e) {
-            throw new NoDataException("La base de datos no se encuentra disponible");
+            throw new NoDataException("BD no disponible: " + e.getMessage());
         }
 
         ArrayList<Profesor> lista = new ArrayList<>();
@@ -76,18 +75,17 @@ public class ServicioProfesor extends Servicio {
             pstmt.execute();
             rs = (ResultSet) pstmt.getObject(1);
             while (rs.next()) {
-                Profesor profesor = new Profesor(
+                Profesor prof = new Profesor(
                         rs.getString("cedula"),
                         rs.getString("nombre"),
                         rs.getString("telefono"),
                         rs.getString("email")
                 );
-                // Si es necesario, también se puede recuperar la clave o rol, aunque normalmente no se muestra.
-                lista.add(profesor);
+                lista.add(prof);
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Error al listar profesores: " + e.getMessage());
+            throw new GlobalException("Error al listar Profesores: " + e.getMessage());
         } finally {
             try {
                 if (rs != null) rs.close();
@@ -105,13 +103,15 @@ public class ServicioProfesor extends Servicio {
     }
 
 
+
+
     public Profesor buscarProfesor(String cedula) throws GlobalException, NoDataException {
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
-            throw new GlobalException("No se ha localizado el driver");
+            throw new GlobalException("Driver no localizado: " + e.getMessage());
         } catch (SQLException e) {
-            throw new NoDataException("La base de datos no se encuentra disponible");
+            throw new NoDataException("BD no disponible: " + e.getMessage());
         }
 
         Profesor profesor = null;
@@ -119,7 +119,8 @@ public class ServicioProfesor extends Servicio {
         CallableStatement pstmt = null;
         try {
             pstmt = this.conexion.prepareCall(buscarProfesor);
-            pstmt.registerOutParameter(1, -10); // Registramos el cursor
+            // Usamos OracleTypes.CURSOR
+            pstmt.registerOutParameter(1, OracleTypes.CURSOR);
             pstmt.setString(2, cedula);
             pstmt.execute();
             rs = (ResultSet) pstmt.getObject(1);
@@ -148,13 +149,12 @@ public class ServicioProfesor extends Servicio {
 
 
     public void modificarProfesor(Profesor profesor, String clave) throws GlobalException, NoDataException {
-        // Se actualizarán datos en la tabla usuario (clave) y profesor (nombre, teléfono, email)
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
-            throw new GlobalException("No se ha localizado el driver");
+            throw new GlobalException("Driver no localizado: " + e.getMessage());
         } catch (SQLException e) {
-            throw new NoDataException("La base de datos no se encuentra disponible");
+            throw new NoDataException("BD no disponible: " + e.getMessage());
         }
 
         CallableStatement pstmt = null;
@@ -165,16 +165,16 @@ public class ServicioProfesor extends Servicio {
             pstmt.setString(3, profesor.getNombre());
             pstmt.setString(4, profesor.getTelefono());
             pstmt.setString(5, profesor.getEmail());
-            pstmt.registerOutParameter(6, java.sql.Types.INTEGER);
+            pstmt.registerOutParameter(6, Types.INTEGER); // filas afectadas
             pstmt.execute();
             int rows = pstmt.getInt(6);
             if (rows == 0) {
                 throw new NoDataException("No se realizó la actualización");
             }
-            System.out.println("\nModificación Satisfactoria!");
+            System.out.println("\nModificación de Profesor Satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Error en la modificación de Profesor: " + e.getMessage());
+            throw new GlobalException("Error al modificar Profesor: " + e.getMessage());
         } finally {
             try {
                 if (pstmt != null) pstmt.close();
@@ -189,27 +189,25 @@ public class ServicioProfesor extends Servicio {
         try {
             this.conectar();
         } catch (ClassNotFoundException e) {
-            throw new GlobalException("No se ha localizado el driver");
+            throw new GlobalException("Driver no localizado: " + e.getMessage());
         } catch (SQLException e) {
-            throw new NoDataException("La base de datos no se encuentra disponible");
+            throw new NoDataException("BD no disponible: " + e.getMessage());
         }
 
         CallableStatement pstmt = null;
         try {
-            pstmt = this.conexion.prepareCall("{call eliminarProfesor(?, ?)}");
+            pstmt = this.conexion.prepareCall(eliminarProfesor);
             pstmt.setString(1, cedula);
-            pstmt.registerOutParameter(2, java.sql.Types.INTEGER);
+            pstmt.registerOutParameter(2, Types.INTEGER); // filas afectadas
             pstmt.execute();
-
             int filasAfectadas = pstmt.getInt(2);
             if (filasAfectadas == 0) {
-                throw new NoDataException("No se encontró el profesor con la cédula proporcionada.");
+                throw new NoDataException("No existe ningún profesor con esa cédula");
             }
-
-            System.out.println("\nEliminación Satisfactoria!");
+            System.out.println("\nEliminación de Profesor Satisfactoria!");
         } catch (SQLException e) {
             e.printStackTrace();
-            throw new GlobalException("Error en la eliminación de Profesor: " + e.getMessage());
+            throw new GlobalException("Error al eliminar Profesor: " + e.getMessage());
         } finally {
             try {
                 if (pstmt != null) pstmt.close();
@@ -219,5 +217,4 @@ public class ServicioProfesor extends Servicio {
             }
         }
     }
-
 }
