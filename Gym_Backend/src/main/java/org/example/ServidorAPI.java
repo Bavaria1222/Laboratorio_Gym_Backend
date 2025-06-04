@@ -22,6 +22,7 @@ public class ServidorAPI {
         server.createContext("/api/matriculas", new MatriculaHandler());
         server.createContext("/api/planEstudios", new PlanEstudioHandler());
         server.createContext("/api/usuarios", new UsuarioHandler());
+        server.createContext("/api/login", new LoginHandler());
 
         // 2️⃣ Pool de hilos sencillo (4 peticiones simultáneas)
         server.setExecutor(Executors.newFixedThreadPool(4));
